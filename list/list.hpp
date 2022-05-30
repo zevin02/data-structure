@@ -1,5 +1,5 @@
 #pragma once
-#include<iostream>
+#include <iostream>
 using namespace std;
 namespace xzw
 {
@@ -10,7 +10,8 @@ namespace xzw
         ListNode<T> *_next;
         T _data;
         ListNode(const T &data)
-            : _data(data), _next(nullptr), _prev(nullptr)
+            : _data(data), _next(nullptr), _prev(nullptr)//其实他的头和尾指针也不用初始化，
+
         {
         }
         ListNode() //弄了一个函数重载，没传参数的
@@ -21,54 +22,68 @@ namespace xzw
     };
 
     template <class T>
-    struct _list_iterator
+    struct _list_iterator //迭代器这个类
     {
         typedef ListNode<T> Node; //把这个对象重命名一下,这样之后就不用再显示使用T
         typedef _list_iterator<T> _iterator;
-        Node *_node; //节点的一个迭代器,因为本质上还是指针
-
+        Node *_node;            //节点的一个迭代器,因为本质上还是指针，这个迭代器他本来就是指向一个节点，所以他必须要有一个节点的指针
         _list_iterator(Node *x) //用一个节点的指针来构造一个迭代器
             : _node(x)
-        {}
+        {
+        }
         _iterator &operator++()
         {
             //到下一个位置
             _node = _node->_next;
             return *this;
         }
-        T &operator*()
+        _iterator &operator--()
+        {
+            //到下一个位置
+            _node = _node->_prev;
+            return *this;
+        }
+        T &operator*() //传引用返回，之后这个值还能被修改
         {
             return _node->_data;
         }
-        bool operator==(_iterator& t)
+        const T &operator*() //是我们的容器的const对象，而不是迭代器是const对象
         {
-            return _node==t._node; 
+            return _node->_data;
         }
-        bool operator!=(_iterator & t)
+        bool operator==(const _iterator &t)//这个对象不能被改变
         {
-            return _node!=t._node;//指向节点的指针不一样就不相等
+            return _node == t._node;
         }
+        bool operator!=(const _iterator &t) //必须要使用const对象才可以，不然就会报错
+        {
+            return _node != t._node; //指向节点的指针不一样就不相等
+        }
+
+        //迭代器的拷贝构造和析构，都不需要我们自己实现，
+        //it2(it),这里我们就是希望他们是指向同一个节点，这样才能对这个节点就行操作，深拷贝出来的，根本就不是我们需要的东西
+        //我们要的就是浅拷贝，要的就是浅拷贝，析构也不需要我们实现，这个节点迭代器不能对他处理，这个节点不是迭代器的，只是为了访问和修改容器的
 
     };
 
     template <class T>
     class List
     {
-        public:
+    public:
         typedef ListNode<T> Node; //把这个对象重命名一下,这样之后就不用再显示使用T
 
     private:
         Node *_head; //头节点
 
     public:
-        typedef _list_iterator<T> iterator;
-        List() //构造函数，里面对头节点进行初始化
+        typedef _list_iterator<T> iterator; //把迭代器也重命名一下
+        List()                              //构造函数，里面对头节点进行初始化
         {
-            _head = new Node;
+            _head = new Node;     //无参构造
             _head->_next = _head; //因为是双向链表
             _head->_prev = _head;
         }
-        void PushBack(const T &x)
+        void PushBack(const T &x) //处理尾插
         {
             Node *t = new Node(x); //开空间+初始化
             //这个就算链表是空也是可以使用的
@@ -78,20 +93,48 @@ namespace xzw
             t->_next = _head;
             _head->_prev = t;
         }
-        iterator begin()
+        iterator begin() //迭代器的头
         {
-            return iterator(_head->_next);//调用了一个构造函数，使用了一个匿名对象
+            return iterator(_head->_next); //调用了一个构造函数，使用了一个匿名对象，头节点的下一个就是第一个位置
+            //返回一个迭代器的类
         }
-        iterator end()
+        iterator end() //迭代器的尾
         {
-            return iterator(_head);//end是最后一个数据的下一个位置//使用了一个匿名对象
+            return iterator(_head); // end是最后一个数据的下一个位置//使用了一个匿名对象
         }
-
+        
+        
 
         //弄出迭代器出来,迭代器还是一个节点的指针，只不过这个迭代器用一个自定义类型进行封装
         //原本在顺序表里面迭代器的++，可以到达下一个位置，但是list中的是随即迭代器，++it 不能到达下一个位置，所以我们需要对
         //他就行运算符重载，* 解引用
+
+
+        void f()
+        {
+            //Node* 原生指针和一个迭代器对象，他们占用空间是一样的，存的东西也一样，但是对他们使用运算符的意义和结果都是不一样的
+            Node* pnode=_head->_next;
+            iterator it=_head->_next;
+            pnode++;
+            *pnode;
+            it++;
+            *it;
+            //这就是类型的意义
+            
+        }
+    
+    
     };
+
+    void print(const List<int>& lt)//const对象必须使用const迭代器
+    {
+         List<int>::iterator it=lt.begin();
+         while(it!=lt.end())
+         {
+             cout<<*it<<" ";
+             ++it;
+         }
+    }
 
     void test_list1()
     {
@@ -100,15 +143,15 @@ namespace xzw
         lt.PushBack(2);
         lt.PushBack(3);
         lt.PushBack(4);
-        List<int>::iterator it=lt.begin();
-        cout<<*it<<endl;
-        ++it;
-        cout<<*it<<endl;
-        // while(it!=lt.end())
+        List<int>::iterator it = lt.begin();//因为迭代器就是每一个元素，begin（）本身就相当于一个节点
+        print(lt);
+        // while (it != lt.end())
         // {
-        //     cout<<(*it)<<" ";
+        //     cout << (*it) << " "; //*解引用，这样就可读可写
         //     ++it;
         // }
-        cout<<endl;
+        --it;
+        cout<<*it<<endl;
+        cout << endl;
     }
 }
