@@ -21,11 +21,14 @@ namespace xzw
         }
     };
 
-    template <class T,class Ref>//我们这里多增加一个模板参数,处理const迭代器
+    template <class T,class Ref,class Ptr>//我们这里多增加一个模板参数,处理const迭代器,第二个参数是处理*,第三个参数是处理->
+   
+
+   //迭代器不一定是一个原生指针,也可能是一个类，通过运算符重载，实现
     struct _list_iterator //迭代器这个类
     {
         typedef ListNode<T> Node; //把这个对象重命名一下,这样之后就不用再显示使用T
-        typedef _list_iterator<T,Ref> _iterator;
+        typedef _list_iterator<T,Ref,Ptr> _iterator;
         Node *_node;            //节点的一个迭代器,因为本质上还是指针，这个迭代器他本来就是指向一个节点，所以他必须要有一个节点的指针
         _list_iterator(Node *x) //用一个节点的指针来构造一个迭代器
             : _node(x)
@@ -56,6 +59,15 @@ namespace xzw
             return _node != t._node; //指向节点的指针不一样就不相等
         }
 
+        //在这里重载一下指针的解引用
+        T* operator->()//这里是普通迭代器，返回的是T*，
+        {
+            return &_node->_data;//前面加了一个&，
+        }
+
+        //同样，我们还要处理const迭代器的->
+
+
         //迭代器的拷贝构造和析构，都不需要我们自己实现，
         //it2(it),这里我们就是希望他们是指向同一个节点，这样才能对这个节点就行操作，深拷贝出来的，根本就不是我们需要的东西
         //我们要的就是浅拷贝，要的就是浅拷贝，析构也不需要我们实现，这个节点迭代器不能对他处理，这个节点不是迭代器的，只是为了访问和修改容器的
@@ -74,10 +86,10 @@ namespace xzw
         Node *_head; //头节点,哨兵位
 
     public:
-        typedef _list_iterator<T,T&> iterator; //把迭代器也重命名一下,普通的迭代器
-        typedef _list_iterator<T,const T&> const_iterator; //const迭代器，第二个参数使用const对象，
+        typedef _list_iterator<T,T&,T*> iterator; //把迭代器也重命名一下,普通的迭代器,因为*返回的就是这个类型所以用&引用，第三个是* 是指针，所以使用的是T*
+        typedef _list_iterator<T,const T&,const T*> const_iterator; //const迭代器，第二个参数使用const对象，
 
-        List()                              //构造函数，里面对头节点进行初始化
+        List()                              //构造函数，里面对头节点进行初始化，哨兵位的头节点，默认的构造函数
         {
             _head = new Node;     //无参构造
             _head->_next = _head; //因为是双向链表
@@ -132,10 +144,34 @@ namespace xzw
             //这就是类型的意义
             
         }
+
+        void Insert(iterator pos,const T& x)
+        {
+
+        }
+        
+        void Erase(iterator pos)
+        {
+
+        }
+
     
     
     };
 
+    struct Date//这里是一个类型，放到链表里面作为节点数据
+    {
+        int _day;
+        int _month;
+        int _year;
+        Date(int year=2022,int month=2,int day=2)
+        :_year(year)
+        ,_month(month)
+        ,_day(day)
+        {
+
+        }
+    };
     void print(const List<int>& lt)//const对象必须使用const迭代器,这里我们实现的就是使用const迭代器进行打印
     {
          List<int>::const_iterator it=lt.begin();//这里调用的就是const迭代器，实现了重载
@@ -164,5 +200,23 @@ namespace xzw
         --it;
         cout<<*it<<endl;
         cout << endl;
+    }
+    void test_list2()
+    {
+        List<Date> lt;//因为有个哨兵位的头节点
+        lt.PushBack(Date(2022,11,9));//这里我们直接给一个匿名对象
+        lt.PushBack(Date(2022,3,9));//这里我们直接给一个匿名对象
+        lt.PushBack(Date(2022,4,9));//这里我们直接给一个匿名对象
+        List<Date>::iterator it=lt.begin();
+        while(it!=lt.end())
+        {
+            // cout<<(*it)._year<<"/"<<(*it)._month<<"/"<<(*it)._day<<endl;
+            //这里返回的是Date,所以可以使用.
+            cout<<it->_year<<"/"<<it->_month<<"/"<<it->_day<<endl;//但是it因为就是一个指针，所以还可以使用运算符
+            cout<<endl;
+            //这里是去调用it.operator->(),返回的是Date* (T*)是一个指针
+            //这里本来应该是it->->_year,为了解决代码的可读性，所以编译器优化了，省略了一个->，所以所有的类型想要重载->，都会被优惠，省略一个->
+            ++it;
+        }
     }
 }
