@@ -121,36 +121,69 @@ namespace xzw
         }
         // List l(t)
 
-        List(const List<T> &t) //要实现深拷贝
+        // List(const List<T> &t) //要实现深拷贝
+        // {
+        //     _head = new Node;     //无参构造
+        //     _head->_next = _head; //因为是双向链表
+        //     _head->_prev = _head;
+
+        //     iterator it = begin();
+        //     //要有一个哨兵位的头节点
+        //     while (it != end())
+        //     {
+        //         PushBack(it._node->_data);
+        //         it++;
+        //     }
+        // }
+
+        // //现代版本的拷贝构造
+       
+
+        // //赋值的传统写法l=lt
+        // List<T> &operator=(const List<T> &lt)
+        // {
+        //     if (this != &lt)
+        //     {
+        //         //原来的节点都要清理掉
+        //         clear();
+        //         for (auto e : lt) // e就是这个容器里面的有效数据
+        //         {
+        //             PushBack(e);
+        //         }
+        //     }
+        //     return *this;
+        // }
+
+        template <class InputIterator>
+        //任意类型的迭代器
+        List(InputIterator first, InputIterator last)//这里又添加了一个构造函数,使用迭代器来进行构造 
         {
             _head = new Node;     //无参构造
             _head->_next = _head; //因为是双向链表
             _head->_prev = _head;
-
-            iterator it = begin();
-            //要有一个哨兵位的头节点
-            while (it != end())
+            while (first != last)
             {
-                PushBack(it._node->_data);
-                it++;
+                PushBack(*first); //把这段迭代器区间里面的值插入到容器里面
+                ++first;
             }
         }
-
-        //赋值的传统写法l=lt
-        List<T> &operator=(const List<T> &lt)
+        //L1(l2)
+        List(const List<T>& lt)
         {
-            if(this!=&lt)
-            {
-                //原来的节点都要清理掉
-                clear();
-                for(auto e :lt)//e就是这个容器里面的有效数据 
-                {
-                    PushBack(e);
-                }
-            }
+            
+            _head = new Node;     //无参构造
+            _head->_next = _head; //因为是双向链表
+            _head->_prev = _head;
+            List<T> tmp(lt.begin(),lt.end());
+            std::swap(_head,tmp._head);//我们交换了两个节点的指针,这样this指向的就是tmp里面的东西,因为是通过指针进行访问的
+
+        }
+
+        List<T> & operator=(const List<T> lt)
+        {
+            std::swap(_head,lt._head);
             return *this;
         }
-
         void clear()
         {
             //把所有数据都删除掉
@@ -296,7 +329,7 @@ namespace xzw
         lt.Insert(lt.begin(), 9);
         lt.pop_front();
         lt.clear();
-        List<int> k=lt;
+        List<int> k = lt;
         List<int>::iterator it = lt.begin(); //因为迭代器就是每一个元素，begin（）本身就相当于一个节点
         it++;
         print(lt);
