@@ -1,13 +1,11 @@
 #pragma once
 #include <iostream>
-#include<cassert>
+#include <cassert>
 using namespace std;
 
-//vector和list相比还是vector的使用次数更多，因为空间不够扩容，这样之后的开辟就不需要再去扩容了（空间的影响不大），时间效率影响最大
+// vector和list相比还是vector的使用次数更多，因为空间不够扩容，这样之后的开辟就不需要再去扩容了（空间的影响不大），时间效率影响最大
 //如果频繁使用头插或者中间插入的话，就要使用list
-//STL的所有容器都不保证线程安全
-
-
+// STL的所有容器都不保证线程安全
 
 namespace xzw
 {
@@ -57,15 +55,15 @@ namespace xzw
             return *this;
         }
 
-         _iterator &operator++(int) //it++;返回的是原来的类型
+        _iterator operator++(int) // it++;返回的是原来的类型
         {
             //到下一个位置
-            _iterator tmp(*this);//拷贝构造一个他这个位置的
+            _iterator tmp(*this); //拷贝构造一个他这个位置的
             _node = _node->_next;
-            return tmp;//返回原来的地址
+            return tmp; //返回原来的地址
         }
-        
-        _iterator &operator--(int)//it--;
+
+        _iterator operator--(int) // it--;
         {
             //到下一个位置
             _iterator tmp(*this);
@@ -121,23 +119,49 @@ namespace xzw
             _head->_next = _head; //因为是双向链表
             _head->_prev = _head;
         }
-        //List l(t)
+        // List l(t)
 
-        List(const ListNode<T>& t)
+        List(const List<T> &t) //要实现深拷贝
         {
+            _head = new Node;     //无参构造
+            _head->_next = _head; //因为是双向链表
+            _head->_prev = _head;
 
+            iterator it = begin();
+            //要有一个哨兵位的头节点
+            while (it != end())
+            {
+                PushBack(it._node->_data);
+                it++;
+            }
+        }
+
+        //赋值的传统写法l=lt
+        List<T> &operator=(const List<T> &lt)
+        {
+            if(this!=&lt)
+            {
+                //原来的节点都要清理掉
+                clear();
+                for(auto e :lt)//e就是这个容器里面的有效数据 
+                {
+                    PushBack(e);
+                }
+            }
+            return *this;
         }
 
         void clear()
         {
             //把所有数据都删除掉
-            iterator it=begin();
-            while(it!=end())
+            iterator it = begin();
+            while (it != end())
             {
-                iterator next=it;
-                Erase(next);
-                ++it;
+                Erase(it++);
             }
+            //这里删除完之后,节点的链接关系还要改变一下,但是这里我们是使用erase所以连接关系都没有任何的改变,都是正常的
+            _head->_next = _head;
+            _head->_prev = _head;
         }
         void PushBack(const T &x) //处理尾插
         {
@@ -185,49 +209,55 @@ namespace xzw
             *it;
             //这就是类型的意义
         }
-        
-        
+
         //这里insert以后pos不会失效,因为他指向的节点不会变,vector会失效的是因为他扩容,他指向的东西就变了,
         iterator Insert(iterator pos, const T &x)
         {
             //这里的迭代器是一个对象，不是指针，所以使用 .
             //在pos的前面插入一个数据
-            Node* cur=pos._node;//我们这里有了迭代器，就能够获得他指向的对象，因为是使用struct进行封装的
-            
-            Node* prev=cur->_prev;
-            Node* newnode=new Node(x);
+            Node *cur = pos._node; //我们这里有了迭代器，就能够获得他指向的对象，因为是使用struct进行封装的
+
+            Node *prev = cur->_prev;
+            Node *newnode = new Node(x);
             //在cur的前面插入一个节点
-            newnode->_next=cur;
-            cur->_prev=newnode;
-            prev->_next=newnode;
-            newnode->_prev=prev;
+            newnode->_next = cur;
+            cur->_prev = newnode;
+            prev->_next = newnode;
+            newnode->_prev = prev;
             //这样就连接起来了
-            return iterator(newnode);//返回的是newnode的迭代器,
+            return iterator(newnode); //返回的是newnode的迭代器,
         }
 
         void push_front(const T &x)
         {
-            Insert(begin(),x);
+            Insert(begin(), x);
         }
         //这个地方pos就失效了
         iterator Erase(iterator pos)
         {
-            assert(pos!=end());//不能把头给删除掉
-            Node* t=pos._node;
-            Node* prev=t->_prev;
-            Node* next=t->_next;
-            prev->_next=next;
-            next->_prev=prev;
-            delete t;//删除一个节点
-            return iterator(next);//指向刚刚那个位置的迭代器
+            assert(pos != end()); //不能把头给删除掉
+            Node *t = pos._node;
+            Node *prev = t->_prev;
+            Node *next = t->_next;
+            prev->_next = next;
+            next->_prev = prev;
+            delete t;              //删除一个节点
+            return iterator(next); //指向刚刚那个位置的迭代器
         }
         void pop_back()
         {
-            Erase(--end());//end()是一个迭代器,再--,就到了最后一个元素了
+            Erase(--end()); // end()是一个迭代器,再--,就到了最后一个元素了
         }
         void pop_front()
         {
             Erase(begin());
+        }
+        ~List()
+        {
+            //析构
+            clear();
+            delete _head; //要把头节点给干掉
+            _head = nullptr;
         }
     };
 
@@ -238,7 +268,8 @@ namespace xzw
         int _year;
         Date(int year = 2022, int month = 2, int day = 2)
             : _year(year), _month(month), _day(day)
-        {}
+        {
+        }
     };
     void print(const List<int> &lt) // const对象必须使用const迭代器,这里我们实现的就是使用const迭代器进行打印
     {
@@ -254,24 +285,26 @@ namespace xzw
     void test_list1()
     {
         List<int> lt;
-        List<int> l(lt);//这个肯定不能用浅拷贝的,会指向同一个地址肯定是不行的
         lt.PushBack(1);
         lt.PushBack(2);
         lt.PushBack(3);
         lt.PushBack(4);
+        List<int> l(lt); //这个肯定不能用浅拷贝的,会指向同一个地址肯定是不行的
+        lt.PushBack(4);
         lt.push_front(5);
         lt.Erase(++lt.begin());
-        lt.Insert(lt.begin(),9);
+        lt.Insert(lt.begin(), 9);
         lt.pop_front();
         lt.clear();
+        List<int> k=lt;
         List<int>::iterator it = lt.begin(); //因为迭代器就是每一个元素，begin（）本身就相当于一个节点
+        it++;
         print(lt);
         // while (it != lt.end())
         // {
         //     cout << (*it) << " "; //*解引用，这样就可读可写
         //     ++it;
         // }
-        
     }
     void test_list2()
     {
@@ -280,7 +313,7 @@ namespace xzw
         lt.PushBack(Date(2022, 3, 9));  //这里我们直接给一个匿名对象
         lt.PushBack(Date(2022, 4, 9));  //这里我们直接给一个匿名对象
         lt.pop_back();
-        
+
         List<Date>::iterator it = lt.begin();
         while (it != lt.end())
         {
