@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cassert>
+#include<initializer_list>
 using namespace std;
 
 // vector和list相比还是vector的使用次数更多，因为空间不够扩容，这样之后的开辟就不需要再去扩容了（空间的影响不大），时间效率影响最大
@@ -23,8 +24,7 @@ namespace xzw
         ListNode() //弄了一个函数重载，没传参数的
 
             : _next(nullptr), _prev(nullptr)
-        {
-        }
+        {}
     };
 
     template <class T, class Ref, class Ptr> //我们这里多增加一个模板参数,处理const迭代器,第二个参数是处理*,第三个参数是处理->
@@ -119,6 +119,20 @@ namespace xzw
             _head->_next = _head; //因为是双向链表
             _head->_prev = _head;
         }
+
+        List(initializer_list<T> ilt) //使用initializer_list进行初始化
+        {
+            _head = new Node;     //无参构造
+            _head->_next = _head; //因为是双向链表
+            _head->_prev = _head;
+
+            typename initializer_list<T>::iterator it=ilt.begin();
+            while(it!=ilt.end())
+            {
+                PushBack(*it);
+                it++;
+            }
+        }
         // List l(t)
 
         // List(const List<T> &t) //要实现深拷贝
@@ -181,7 +195,7 @@ namespace xzw
 
         List<T> & operator=(const List<T> lt)
         {
-            std::swap(_head,lt._head);
+            std::swap(_head,lt._head);//头节点交换一下就行了
             return *this;
         }
         void clear()
@@ -193,8 +207,7 @@ namespace xzw
                 Erase(it++);
             }
             //这里删除完之后,节点的链接关系还要改变一下,但是这里我们是使用erase所以连接关系都没有任何的改变,都是正常的
-            _head->_next = _head;
-            _head->_prev = _head;
+           
         }
         void PushBack(const T &x) //处理尾插
         {
@@ -294,6 +307,9 @@ namespace xzw
         }
     };
 
+    //反向迭代器就是对正向迭代器进行封装
+    
+
     struct Date //这里是一个类型，放到链表里面作为节点数据
     {
         int _day;
@@ -322,6 +338,7 @@ namespace xzw
         lt.PushBack(2);
         lt.PushBack(3);
         lt.PushBack(4);
+        List<int> ll={1,2,3};
         List<int> l(lt); //这个肯定不能用浅拷贝的,会指向同一个地址肯定是不行的
         lt.PushBack(4);
         lt.push_front(5);
