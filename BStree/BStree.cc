@@ -1,6 +1,7 @@
 #include"BStree.hpp"
 int main()
 {
-    test();
+    K::test();
+    KV::testdict();
     return 0;
 }
