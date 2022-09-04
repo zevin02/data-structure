@@ -139,7 +139,7 @@ public:
 
                     // cur的右边高，parent的左边高
                     //先对cur进行左单旋
-                    RotateLR(parent); //左右双旋转
+                    RotateRL(parent); //左右双旋转
                     break;
                 }
             }
@@ -155,14 +155,67 @@ public:
     void RotateLR(Node *parent) //左右双旋
     {
         //先对子进行一个左单旋
+        Node *subL = parent->_left;
+        Node *subLR = subL->_right;
+        int bf = subLR->_bf; //三种情况
+
         RotateL(parent->_left);
         RotateR(parent);
+        if(bf==0)
+        {
+            subL->_bf=0;
+            subLR->_bf=0;
+            parent->_bf=0;
+        }
+        else if(bf==1)
+        {
+            subL->_bf=-1;
+            subLR->_bf=0;
+            parent->_bf=0;
+        }
+                else if(bf==-1)
+        {
+            subL->_bf=0;
+            subLR->_bf=0;
+            parent->_bf=1;
+        }
+        else
+        {
+            assert(false);
+        }
+
     }
-    void RotateRL(Node *parent) //左右双旋
+    void RotateRL(Node *parent) //右左双旋
     {
         //先对子进行一个左单旋
+        Node *subR = parent->_right;
+        Node *subRL = subR->_left;
+        int bf = subRL->_bf; //三种情况
+
         RotateR(parent->_right);
         RotateL(parent);
+        if (bf == 1)
+        {
+            parent->_bf = -1;
+            subR->_bf = 0;
+            subRL->_bf = 0;
+        }
+        else if (bf == -1)
+        {
+            parent->_bf = 0;
+            subR->_bf = 1;
+            subRL->_bf = 0;
+        }
+        else if (bf == 0) //自己就是新增
+        {
+            parent->_bf = 0;
+            subR->_bf = 0;
+            subRL->_bf = 0;
+        }
+        else //一定不会出现的情况
+        {
+            assert(false);
+        }
     }
 
     void RotateR(Node *parent)
@@ -213,7 +266,7 @@ public:
         cout << root->_kv.first << " ";
         _InOrder(root->_right);
     }
-    void InOrder()
+    void InOrder() //不能验证是不是AVL树
     {
         _InOrder(_root);
     }
@@ -248,15 +301,50 @@ public:
         subR->_bf = 0;
         parent->_bf = 0;
     }
+    bool IsBalance()
+    {
+        _IsBalance(_root);
+    }
+    int Height(Node *root)
+    {
+        //计算高度
+        if (root == nullptr)
+            return 0;
+        int lefth = Height(root->_left);
+        int righth = Height(root->_right);
+        return lefth > righth ? lefth + 1 : righth + 1; //高度就是左右子树里面大的那个加1
+    }
+    bool _IsBalance(Node *root)
+    {
+        if (root == nullptr)
+        {
+            return true;
+        }
+        int LeftHeight = Height(root->_left);
+        int RightHeight = Height(root->_right);
+        if (RightHeight - LeftHeight != root->_bf) //检查平衡因子是否正确
+        {
+            cout << root->_kv.first << "现在是:" << root->_bf << endl;
+            cout << root->_kv.first << "应该是:" << RightHeight - LeftHeight << endl;
+            return false;
+        }
+        return abs(RightHeight - LeftHeight) < 2 && _IsBalance(root->_left) && _IsBalance(root->_right); //再去检查左右子树
+    }
 };
 
 void testavltree()
 {
     AVLTree<int, int> t;
-    int a[] = {1, 2, 3, 4, 5};
+    // int a[] = {16,3,7,11,9,26,18,14,15};
+    int a[] = {4, 2, 6, 1, 3, 5, 15, 7, 16, 14};
     for (auto e : a)
     {
         t.Insert(make_pair(e, e));
+        cout << t.IsBalance();
     }
-    t.InOrder();
+    // t.Insert(make_pair(18,18));
+    // pair<int,int> s(18,18);
+
+    // cout<<t.IsBalance();
+    // t.InOrder();
 }
