@@ -17,7 +17,7 @@ struct RBTreeNode
     pair<K, V> _kv;
     Color _col; //控制颜色
     RBTreeNode(const pair<K, V> &kv)
-        : _kv(kv)
+        : _kv(kv), _left(nullptr), _right(nullptr), _parent(nullptr), _col(RED)//一开始的颜色给红色
     {
     }
 };
@@ -30,6 +30,82 @@ class RBTree
 private:
     Node *_root;
 
+private:
+    void _InOrder(Node *root)
+    {
+        if (root == nullptr)
+            return;
+        _InOrder(root->_left);
+        cout << root->_kv.first << " ";
+        _InOrder(root->_right);
+    }
+    void RotateR(Node *parent)
+    {
+        //右单旋转
+        Node *subL = parent->_left;           //子节点
+        Node *subLR = subL->_right;           //子节点的右节点
+        Node *parentparent = parent->_parent; //出问题节点的父节点
+        parent->_left = subLR;
+        subL->_right = parent;
+        parent->_parent = subL;
+        if (subLR)
+            subLR->_parent = parent;
+
+        //和父节点的父节点连接
+        if (parent == _root)
+        {
+            //要旋转的节点已经是根
+            //更新根
+            _root = subL;
+            _root->_parent = nullptr; //更新顶部
+        }
+        else
+        {
+            //父节点上面还有节点
+            if (parentparent->_left == parent)
+            {
+                //是左节点
+                subL->_parent = parentparent;
+                parentparent->_left = subL;
+            }
+            else
+            {
+                subL->_parent = parentparent;
+                parentparent->_right = subL;
+            }
+        }
+        
+    }
+    void RotateL(Node *parent) //左单旋
+    {
+        Node *subR = parent->_right;
+        Node *subRL = subR->_left;
+        Node *parentparent = parent->_parent;
+        parent->_parent = subR;
+        subR->_left = parent;
+        parent->_right = subRL;
+        if (subRL)
+            subRL->_parent = parent;
+        if (parent == _root)
+        {
+            _root = subR;
+            _root->_parent = nullptr;
+        }
+        else
+        {
+            if (parentparent->_right == parent)
+            {
+                parentparent->_right = subR;
+                subR->_parent = parentparent;
+            }
+            else
+            {
+                parentparent->_left = subR;
+                subR->_parent = parentparent;
+            }
+        }
+    }
+
 public:
     RBTree()
         : _root(nullptr)
@@ -40,6 +116,7 @@ public:
         if (_root == nullptr)
         {
             _root = new Node(kv);
+            _root->_col = BLACK;
             return true;
         }
         //
@@ -118,12 +195,11 @@ public:
                     {
                         //双旋
                         //左右双旋
-                        //p进行右单旋，g左单旋，g变红藕，cur变黑，
+                        // p进行右单旋，g左单旋，g变红藕，cur变黑，
                         RotateL(parent);
                         RotateR(grandparent);
-                        cur->_col=BLACK;
-                        grandparent->_col=RED;
-                        parent->_col=RED;
+                        cur->_col = BLACK;
+                        grandparent->_col = RED;
                     }
                     break;
                 }
@@ -160,9 +236,8 @@ public:
                     {
                         RotateR(parent);
                         RotateL(grandparent);
-                        cur->_col=BLACK;
-                        grandparent->_col=RED;
-                        parent->_col=RED;
+                        cur->_col = BLACK;
+                        grandparent->_col = RED;
                     }
                     break;
                 }
@@ -170,73 +245,75 @@ public:
         }
         _root->_col = BLACK; //根的一定是黑色
 
-        return false;
+        return true;
     }
-    void RotateR(Node *parent)
+    bool IsBalance()
     {
-        //右单旋转
-        Node *subL = parent->_left;           //子节点
-        Node *subLR = subL->_right;           //子节点的右节点
-        Node *parentparent = parent->_parent; //出问题节点的父节点
-        parent->_left = subLR;
-        subL->_right = parent;
-        parent->_parent = subL;
-        if (subLR)
-            subLR->_parent = parent;
+        if(_root&&_root->_col==RED)
+        {
+            cout<<"根节点是黑色"<<endl;
+            return false;
+        }
+        int basevalue=0;//基准值
+        Node* left=_root;
+        while(left)
+        {
+            if(left->_col==BLACK)
+            {
+                basevalue++;
+            }
+            left=left->_left;
+        }
 
-        //和父节点的父节点连接
-        if (parent == _root)
-        {
-            //要旋转的节点已经是根
-            //更新根
-            _root = subL;
-            _root->_parent = nullptr; //更新顶部
-        }
-        else
-        {
-            //父节点上面还有节点
-            if (parentparent->_left == parent)
-            {
-                //是左节点
-                subL->_parent = parentparent;
-                parentparent->_left = subL;
-            }
-            else
-            {
-                subL->_parent = parentparent;
-                parentparent->_right = subL;
-            }
-        }
-        //现在根的bf=0
-        //右边的是bf=0
+        //用最左路径黑色节点的数量，做基准值
+        int blacknum=0;//每个节点的黑色个数
+        return _IsBalance(_root,basevalue,blacknum);
     }
-    void RotateL(Node *parent) //左单旋
+    void InOrder() //不能验证是不是AVL树
     {
-        Node *subR = parent->_right;
-        Node *subRL = subR->_left;
-        Node *parentparent = parent->_parent;
-        parent->_parent = subR;
-        subR->_left = parent;
-        parent->_right = subRL;
-        if (subRL)
-            subRL->_parent = parent;
-        if (parent == _root)
+        _InOrder(_root);
+    }
+
+private:
+    bool _IsBalance(Node* root,int basevalue,int blacknum)
+    {
+        //根节点是黑的
+        //红色，孩子是黑色,没有连续的红节点
+        //每个路径含有相同的黑色
+        if(root==nullptr)
         {
-            _root = subR;
-            _root->_parent = nullptr;
+            //一条路径走完了
+            if(basevalue!=blacknum)
+            {
+                //每条路劲都有blacknum
+                cout<<"存在黑色节点数量不相等"<<endl;
+                return false;
+            }
+            return true;
         }
-        else
+        if(root->_col==RED&&root->_parent->_col==RED)//红节点
         {
-            if (parentparent->_right == parent)
-            {
-                parentparent->_right = subR;
-                subR->_parent = parentparent;
-            }
-            else
-            {
-                parentparent->_left = subR;
-                subR->_parent = parentparent;
-            }
+            //检查它的父亲,一定有  
+            cout<<"出现连续的红节点"<<endl;
+            return false;
         }
+        if(root->_col==BLACK)
+        {
+            blacknum++;
+        }
+        return _IsBalance(root->_left,basevalue,blacknum)&&_IsBalance(root->_right,basevalue,blacknum);//没有用引用，下面的加加，不会影响下面
     }
 };
+
+void test()
+{
+    RBTree<int, int> rbt;
+    int a[]={16,3,7,11,9,26,18,14,15};
+    // int a[] = {4,2,6,1,3,5,15,7,16,14};
+    for (auto e : a)
+    {
+        rbt.Insert(make_pair(e, e));
+    }
+    cout<<rbt.IsBalance()<<endl;
+    rbt.InOrder();
+}
