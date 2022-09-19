@@ -13,7 +13,11 @@ void test_map()
     while(it!=s.end())
     {
         cout<<it->first<<" "<<it->second<<endl;
-        ++it;
+        it++;
+    }
+    if(!s.empty())
+    {
+        cout<<"size="<<s.size()<<endl;
     }
 
 

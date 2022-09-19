@@ -14,7 +14,7 @@ struct RBTreeNode
     RBTreeNode<T> *_left;
     RBTreeNode<T> *_right;
     RBTreeNode<T> *_parent;
-    T _data;//这个就是它存储的元素
+    T _data;    //这个就是它存储的元素
     Color _col; //控制颜色
     RBTreeNode(const T &data)
         : _data(data), _left(nullptr), _right(nullptr), _parent(nullptr), _col(RED) //一开始的颜色给红色
@@ -26,9 +26,9 @@ template <class T, class Ref, class Ptr> // Ref返回的是里面的值，Ptr返
 struct RBTreeIterator
 {
     typedef RBTreeNode<T> Node;
-    typedef RBTreeIterator<T,Ref, Ptr> Self;
+    typedef RBTreeIterator<T, Ref, Ptr> Self;
     Node *_node;
-    RBTreeIterator(Node *node)//用一个节点的指针来初始化构造函数
+    RBTreeIterator(Node *node) //用一个节点的指针来初始化构造函数
         : _node(node)
     {
     }
@@ -41,7 +41,7 @@ struct RBTreeIterator
     {
         return &_node->_data;
     }
-    Self& operator++()
+    Self &operator++()//前置++
     {
         // 1. 左边都访问过了，假如右树存在，下一个就要访问右树的最左节点
         // 2. 如果右为空，我所在的子树完了，我是父亲的左边，下一个访问父亲
@@ -60,55 +60,65 @@ struct RBTreeIterator
         {
             //右为空，找孩子是父亲左的祖先
             Node *cur = _node;
-            Node* parent=cur->_parent;
+            Node *parent = cur->_parent;
             //如果cur是父亲的右
-            while(parent&&cur==parent->_right)
+            while (parent && cur == parent->_right)
             {
-                cur=parent;
-                parent=parent->_parent;
+                cur = parent;
+                parent = parent->_parent;
             }
-            //cur是父亲的左
-            _node=parent;
+            // cur是父亲的左
+            _node = parent;
         }
-        return  *this;//这个返回就是一个节点的指针
+        return *this; //这个返回就是一个节点的指针
     }
-    Self& operator--()
+    Self operator++(int)//不能返回引用，我们这边的返回的是copy不是this
+    {
+        //后置++
+        Self copy(*this);
+        ++(*this);
+        return copy;
+
+    }
+    Self &operator--()
     {
         //右根左，和++反过来的
         //左不为空，到左节点的最右边
         //左为空，是父亲的右节点，到父亲
         //是父亲的左节点，到孩子是父亲的右节点
-        if(_node->_left)
+        if (_node->_left)
         {
             //左不为空，
-            Node* max=_node->_left;
-            while(max->_right)
+            Node *max = _node->_left;
+            while (max->_right)
             {
-                max=max->_right;
+                max = max->_right;
             }
-            _node=max;
+            _node = max;
         }
         else
         {
-            Node* parent=_node->_parent;
-            while(parent&&parent->_left==_node)
+            Node *parent = _node->_parent;
+            while (parent && parent->_left == _node)
             {
-                
-                _node=parent;
-                parent=parent->_parent;
-            }
-            _node=_node->_parent;
 
+                _node = parent;
+                parent = parent->_parent;
+            }
+            _node = _node->_parent;
         }
 
         return *this;
     }
 
-    bool operator!=(const Self& s)
+    bool operator!=(const Self &s)
     {
-        return _node!=s._node; //比较它里面的元素不相等即可
+        return _node != s._node; //比较它里面的元素不相等即可
     }
-
+    bool operator==(const Self& s)
+    {
+        return _node==s._node;
+    }
 };
 
 // set传的T是key RBTree<K,K,SetKeyOfT>
@@ -199,7 +209,7 @@ private:
 
 public:
     typedef RBTreeIterator<T, T &, T *> Iterator;
-    typedef RBTreeIterator<T,const T&,const T*> const_Iterator;
+    typedef RBTreeIterator<T, const T &, const T *> const_Iterator;
 
     //中序遍历就是从小到大的
     Iterator begin() //因为它是走中序，所以第一个是最左节点
@@ -210,7 +220,7 @@ public:
             min = min->_left;
         }
 
-        return Iterator(min);//返回的是一个构造好的对象
+        return Iterator(min); //返回的是一个构造好的对象
     }
     Iterator end()
     {
@@ -220,26 +230,26 @@ public:
         return Iterator(nullptr);
     }
 
-    Iterator Find(const K& key)//K是为了取出V里面的第一个参数
+    Iterator Find(const K &key) // K是为了取出V里面的第一个参数
     {
-        Node* cur=_root;
-        KeyOfT kot;//类对象，重载了仿函数
-        while(cur)
+        Node *cur = _root;
+        KeyOfT kot; //类对象，重载了仿函数
+        while (cur)
         {
-            if(kot(cur->_data)<key)
+            if (kot(cur->_data) < key)
             {
-                cur=cur->_right;
+                cur = cur->_right;
             }
-            else if(kot(cur->_data)>key)
+            else if (kot(cur->_data) > key)
             {
-                cur=cur->_left;
+                cur = cur->_left;
             }
             else
             {
                 return Iterator(cur);
             }
         }
-        return end();//没有找到，就返回end
+        return end(); //没有找到，就返回end
     }
 
     RBTree()
@@ -249,61 +259,80 @@ public:
     ~RBTree()
     {
         Destroy(_root);
-        _root=nullptr;
+        _root = nullptr;
     }
-    RBTree(const RBTree<K,T,KeyOfT>&t)//拷贝构造
+    RBTree(const RBTree<K, T, KeyOfT> &t) //拷贝构造
     {
-        _root=Copy(t._root);
+        _root = Copy(t._root);
     }
-    Node* Copy(Node* root)
+    Node *Copy(Node *root)
     {
-        if(root==nullptr)
+        if (root == nullptr)
         {
             return nullptr;
         }
         //前序遍历
-        Node* newRoot=new Node(root->_data);
-        newRoot->_col=root->_col;
+        Node *newRoot = new Node(root->_data);
+        newRoot->_col = root->_col;
 
-        newRoot->_left=Copy(root->_left);//连接起来
-        newRoot->_right=Copy(root->_right);
-        if(newRoot->_left)//和父亲连接起来
+        newRoot->_left = Copy(root->_left); //连接起来
+        newRoot->_right = Copy(root->_right);
+        if (newRoot->_left) //和父亲连接起来
         {
-            newRoot->_left->_parent=newRoot;
+            newRoot->_left->_parent = newRoot;
         }
-        else if(newRoot->_right)
+        else if (newRoot->_right)
         {
-            newRoot->_right->_parent=newRoot;
+            newRoot->_right->_parent = newRoot;
         }
-
 
         return newRoot;
     }
 
-    RBTree<K,T,KeyOfT>& operator=(RBTree<K,T,KeyOfT> t)
+    RBTree<K, T, KeyOfT> &operator=(RBTree<K, T, KeyOfT> t)
     {
-        swap(_root,t._root);//这里的t是拷贝构造，调用头节点，就能够访问下面的所有节点了
+        swap(_root, t._root); //这里的t是拷贝构造，调用头节点，就能够访问下面的所有节点了
         return *this;
-
     }
-    void Destroy(Node* root)
+    void Destroy(Node *root)
     {
-        if(root==nullptr)
+        if (root == nullptr)
         {
             return;
         }
         Destroy(root->_left);
         Destroy(root->_right);
-        delete root;//后序遍历，如果先把这个节点删除的话，就无法访问它后面的东西了
+        delete root; //后序遍历，如果先把这个节点删除的话，就无法访问它后面的东西了
+    }
+
+    bool empty()
+    {
+        return _root == nullptr; //根节点为空，就不存在
+    }
+    void _size(Node* root,size_t& size)
+    {
+        if(root==nullptr)
+        {
+            return;
+        }
+        size++;
+        _size(root->_left,size);
+        _size(root->_right,size);
 
     }
-    pair<Iterator,bool> Insert(const T &data)
+    size_t size()
+    {
+        size_t num=0;
+        _size(_root,num);
+        return num;
+    }
+    pair<Iterator, bool> Insert(const T &data)
     {
         if (_root == nullptr)
         {
             _root = new Node(data);
             _root->_col = BLACK;
-            return make_pair(Iterator(_root),true);
+            return make_pair(Iterator(_root), true);
         }
         //
 
@@ -329,14 +358,14 @@ public:
             }
             else
             {
-                return make_pair(Iterator(cur),false);//这个值存在，就返回这个已近有的节点
+                return make_pair(Iterator(cur), false); //这个值存在，就返回这个已近有的节点
             }
         }
         //走到这里，就可以链接上
         cur = new Node(data);
 
-        Node* newnode=cur;//把这个新节点给保持起来
-        cur->_col = RED; //新增节点颜色给红色
+        Node *newnode = cur; //把这个新节点给保持起来
+        cur->_col = RED;     //新增节点颜色给红色
 
         cur->_parent = parent;              //链接上父亲
         if (kot(parent->_data) > kot(data)) //父亲的值也能取出来
@@ -440,6 +469,6 @@ public:
         }
         _root->_col = BLACK; //根的一定是黑色
 
-        return make_pair(Iterator(newnode),true);
+        return make_pair(Iterator(newnode), true);
     }
 };

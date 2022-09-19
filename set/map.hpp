@@ -38,6 +38,14 @@ namespace xzw
             auto ret=_t.Insert(make_pair(key,V()));
             return ret.first->second;
         }
+        bool empty()
+        {
+            return _t.empty();
+        }
+        size_t size()
+        {
+            return _t.size();
+        }
     private:
         RBTree<K, pair<K, V>, MapKeyOfT> _t; //用第二个模板参数来控制
     };
