@@ -14,7 +14,7 @@ struct RBTreeNode
     RBTreeNode<T> *_left;
     RBTreeNode<T> *_right;
     RBTreeNode<T> *_parent;
-    T _data;
+    T _data;//这个就是它存储的元素
     Color _col; //控制颜色
     RBTreeNode(const T &data)
         : _data(data), _left(nullptr), _right(nullptr), _parent(nullptr), _col(RED) //一开始的颜色给红色
@@ -28,7 +28,7 @@ struct RBTreeIterator
     typedef RBTreeNode<T> Node;
     typedef RBTreeIterator<T,Ref, Ptr> Self;
     Node *_node;
-    RBTreeIterator(Node *node)
+    RBTreeIterator(Node *node)//用一个节点的指针来初始化构造函数
         : _node(node)
     {
     }
@@ -70,7 +70,7 @@ struct RBTreeIterator
             //cur是父亲的左
             _node=parent;
         }
-        return  *this;
+        return  *this;//这个返回就是一个节点的指针
     }
     Self& operator--()
     {
@@ -106,7 +106,7 @@ struct RBTreeIterator
 
     bool operator!=(const Self& s)
     {
-        return _node!=s._node; 
+        return _node!=s._node; //比较它里面的元素不相等即可
     }
 
 };
@@ -210,7 +210,7 @@ public:
             min = min->_left;
         }
 
-        return Iterator(min);
+        return Iterator(min);//返回的是一个构造好的对象
     }
     Iterator end()
     {
@@ -223,7 +223,7 @@ public:
     Iterator Find(const K& key)//K是为了取出V里面的第一个参数
     {
         Node* cur=_root;
-        KeyOfT kot;
+        KeyOfT kot;//类对象，重载了仿函数
         while(cur)
         {
             if(kot(cur->_data)<key)
@@ -251,7 +251,7 @@ public:
         Destroy(_root);
         _root=nullptr;
     }
-    RBTree(const RBTree<K,T,KeyOfT>&t)
+    RBTree(const RBTree<K,T,KeyOfT>&t)//拷贝构造
     {
         _root=Copy(t._root);
     }
@@ -265,9 +265,9 @@ public:
         Node* newRoot=new Node(root->_data);
         newRoot->_col=root->_col;
 
-        newRoot->_left=Copy(root->_left);
+        newRoot->_left=Copy(root->_left);//连接起来
         newRoot->_right=Copy(root->_right);
-        if(newRoot->_left)
+        if(newRoot->_left)//和父亲连接起来
         {
             newRoot->_left->_parent=newRoot;
         }
@@ -282,7 +282,7 @@ public:
 
     RBTree<K,T,KeyOfT>& operator=(RBTree<K,T,KeyOfT> t)
     {
-        swap(_root,t._root);//这里的t是拷贝构造
+        swap(_root,t._root);//这里的t是拷贝构造，调用头节点，就能够访问下面的所有节点了
         return *this;
 
     }
@@ -294,7 +294,7 @@ public:
         }
         Destroy(root->_left);
         Destroy(root->_right);
-        delete root;//后序遍历
+        delete root;//后序遍历，如果先把这个节点删除的话，就无法访问它后面的东西了
 
     }
     pair<Iterator,bool> Insert(const T &data)

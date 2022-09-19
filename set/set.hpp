@@ -36,7 +36,7 @@ namespace xzw
 
 
     private:
-        RBTree<K, K, SetKeyOfT> _t; //用第二个模板参数来控制
+        RBTree<K, K, SetKeyOfT> _t; //用第二个模板参数来控制，第一个模板参数是用来知道V里面键的类型
     };
 
 };
