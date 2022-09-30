@@ -106,7 +106,6 @@ namspace Close_Hash
             {
                 //找到了那个值
                 ret->_status = DELETE;
-                _n--;
                 return true;
             }
         }
