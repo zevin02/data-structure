@@ -21,7 +21,7 @@ namspace Close_Hash
     };
 
     template <class K>
-    struct Hash
+    struct Hash//哈希函数
     {
         size_t operator()(const K &key)
         {
@@ -72,7 +72,7 @@ namspace Close_Hash
             {
                 return nullptr; //没找到
             }
-            HashFunc hc;
+            HashFunc hc;//仿函数,实现哈希函数
             size_t start = hc(key) % _table.size(); //模上它的vector的元素大小,如果模上它的容量的话，可能回超出size的范围，无法访问_table[i],只能访问size以内的
             size_t i = 0;
             size_t index = start;
@@ -85,7 +85,7 @@ namspace Close_Hash
                     return &_table[index];
                 }
                 i++;
-                index = start + i * i; //这个是依次探测
+                index = start + i * i; //这个是依次探测,二次探测
                 //如果到最后还有数据的话，那就要绕回来
                 index %= _table.size();
             }
@@ -105,7 +105,8 @@ namspace Close_Hash
             else
             {
                 //找到了那个值
-                ret->_status = DELETE;
+                ret->_status = DELETE;//我们不需要进行手动删除，直接把它的状态设置为删除即可
+                _n--;
                 return true;
             }
         }
@@ -124,17 +125,14 @@ namspace Close_Hash
                 //越小，冲突的概率就越低，效率越高，但是空间浪费越高
                 //繁殖，冲突的概率越高，效率越低，浪费越小
                 //载荷因子大于0.7就要进行扩容
-                size_t newsize = _table.size() == 0 ? 10 : _table.size() * 2;
+                size_t newsize = _table.size() == 0 ? 10 : _table.size() * 2;//table的大小变小了
                 // vector<HashData<K,V>>  newtable;
 
                 // newtable.resize(newsize);//扩完容，就会把没有元素的地方初始化成0
-                // //扩容完，要重新改变值的位置，原来冲突的可能不冲突了，不冲突的可能就冲突了
+                // //扩容完，要重新改变值的位置，原来冲突的可能不冲突了，不冲突的可能就冲突了，建立新的映射关系
                 // //遍历原表，把原表的数据重新映射到新表
-                // for(size_t i=0;i<newtable.size();i++)
-                // {
-                //     //
-                // }
-                HashTable<K, V, HashFunc> newHT;
+               
+                HashTable<K, V, HashFunc> newHT;//这里用一个新对象，调用自己
                 newHT._table.resize(newsize);
                 for (size_t i = 0; i < _table.size(); i++)
                 {
