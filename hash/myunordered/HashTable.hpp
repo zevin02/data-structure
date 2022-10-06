@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <list>
@@ -11,42 +12,151 @@ unordered_map的key，要求，1.能支持取模，或者能转化成取模的�
 
 
 */
-template <class K, class V>
-
-struct HashNode
-{
-    pair<K, V> _kv;
-    HashNode<K, V> *_next; //我们用一个单链表,我们自己弄的
-    HashNode(const pair<K, V> &kv)
-        : _kv(kv), _next(nullptr)
-    {
-    }
-};
 
 template <class K>
-struct Hash
+struct Hash //把哈希函数放到前面来
 {
     size_t operator()(const K &key)
     {
         return key; //负数也给他转化成非负数
     }
 };
+template <>
+struct Hash<string> //特化，全特化
+{
+    size_t operator()(const string &key)
+    {
+        size_t ret = 0;
+        for (auto e : key)
+        {
+            ret += e;
+        }
+        return ret;
+    }
+};
 
-template <class K, class V, class HashFunc = Hash<K>>
+//这个地方我们也要支持一个迭代器,我们要支持一个桶一个桶进行查找就行了
+template <class K, class T, class KeyOfT, class HashFunc>
+class HashTable;   //解决互相引用的问题
+template <class T> //因为我们也要给map和set使用
+
+struct HashNode
+{
+    T _data;
+    HashNode<T> *_next; //我们用一个单链表,我们自己弄的
+    HashNode(const T &data)
+        : _data(data), _next(nullptr)
+    {
+    }
+};
+
+template <class K, class T, class Ref, class Ptr, class KeyofT, class HashFunc>
+struct HTIterator
+{
+    typedef HashNode<T> Node; //如果我把一个桶走完了怎么办
+    typedef HTIterator<K, T, Ref, Ptr, KeyofT, HashFunc> Self;
+
+    Node *_node;
+    HashTable<K, T, KeyofT, HashFunc> *_pht; //指向hash表对象的指针
+
+    HTIterator(Node *node, HashTable<K, T, KeyofT, HashFunc> *pht)
+        : _node(node), _pht(pht)
+    {
+    }
+
+    Ref operator*() //返回引用
+    {
+        return _node->_data;
+    }
+    Ptr operator->() //返回地址
+    {
+        return &_node->_data;
+    }
+    Self &operator++()
+    {
+        vector<Node *> table = _pht->GetVectorNode();//这里我们写一个函数获得它的table
+        if (_node->_next)
+        {
+            _node = _node->_next; //这个桶的下一个节点存在，往后走就行了
+        }
+        else
+        {
+            bool flag = false;
+            //这个节点的下一个不存在，要走到下一个桶
+            KeyofT kot;
+            HashFunc hf;
+            size_t index = hf(kot(_node->_data)) % table.size(); //自己不为空，所以，可以计算它再哪个桶里面,这样就能知道它在几号桶里面
+            ++index;
+            //从下一个桶，下一个不为空的桶
+            while (index <table.size())
+            {
+                if (table[index])
+                {
+                    flag = true;
+                    break;
+                }
+                else
+                {
+                    //没找到就++
+                    index++;
+                }
+            }
+
+            if (flag)
+            {
+                //找到了
+                _node = table[index];
+            }
+            else
+            {
+                //表走完了，都没有
+                _node = nullptr;
+            }
+        }
+        return *this;
+    }
+
+    bool operator!=(const Self &s) const
+    {
+        return _node != s._node;
+    }
+};
+
+template <class K, class T, class KeyOfT, class HashFunc>
 class HashTable
 {
-    typedef HashNode<K, V> Node;
+public:
+    typedef HashNode<T> Node;
+    typedef HTIterator<K, T, T &, T *, KeyOfT, HashFunc> iterator;
+    // template <class K, class T, class Ref, class Ptr, class KeyOfT, class HashFunc>
+    // friend struct HTIterator; //因为在迭代器里面要使用hashtable里面的东西，所以这里我们把它定义成友元对象即可
 
 private:
     vector<Node *> _table; //链表里面的元素挂起来,指针数组
     size_t _n = 0;         //有效数据，计算负载因子
 public:
+    iterator begin()
+    {
+        for (size_t i = 0; i < _table.size(); i++)
+        {
+            if (_table[i])
+            {
+                return iterator(_table[i], this); //这样传进去就是哈希表的指针
+            }
+        }
+        return end();
+    }
+    iterator end()
+    {
+        return iterator(nullptr, this); //给控就行了
+    }
     Node *Find(const K &key)
     {
         if (_table.empty())
         {
             return nullptr;
         }
+        KeyOfT kot;
         HashFunc hc;
         size_t index = hc(key) % _table.size();
         if (_table[index] == nullptr)
@@ -60,7 +170,7 @@ public:
             Node *cur = _table[index]; //_table[index]就是对应链表的头节点
             while (cur)
             {
-                if (cur->_kv.first == key)
+                if (kot(cur->_data) == key)
                     return cur;
                 cur = cur->_next;
             }
@@ -75,20 +185,21 @@ public:
         }
         //找到了，就把它给删除掉
         HashFunc hc;
+        KeyOfT kot;
         size_t index = hc(key) % _table.size();
         Node *cur = _table[index];
         Node *prev = nullptr;
         while (cur)
         {
-            if (cur->_kv.first == key)
+            if (kot(cur->_data) == key)
             {
-                if(prev==nullptr)
+                if (prev == nullptr)
                 {
                     //头删除
-                    _table[index]=cur->_next;
+                    _table[index] = cur->_next;
                 }
                 else
-                prev->_next = cur->_next;
+                    prev->_next = cur->_next;
                 delete cur;
                 --_n;
                 return true;
@@ -101,10 +212,15 @@ public:
         }
         return false;
     }
-    bool Insert(const pair<K, V> &kv)
+    vector<Node *> GetVectorNode()
+    {
+        return _table;
+    }
+    bool Insert(const T &data)
     {
 
-        Node *ret = Find(kv.first);
+        KeyOfT kot;
+        Node *ret = Find(kot(data));
         if (ret)
         {
             return false;
@@ -128,7 +244,7 @@ public:
                     {
                         //把这个数据弄下来，直接
                         Node *next = cur->_next;
-                        size_t index = hc(cur->_kv.first) % newTable.size();
+                        size_t index = hc(kot(cur->_data)) % newTable.size();
                         //然后进行头插
                         cur->_next = newTable[index];
                         newTable[index] = cur;
@@ -140,38 +256,14 @@ public:
             // newcp里面的数据都是我们想要的
             _table.swap(newTable);
         }
-        size_t index = hc(kv.first) % _table.size();
+        size_t index = hc(kot(data)) % _table.size();
         //没有数据
-        Node *newnode = new Node(kv); //新的头节点
+        Node *newnode = new Node(data); //新的头节点
         newnode->_next = _table[index];
         _table[index] = newnode; //
         //用头插法把数据插进去，因为重新映射代价比较大
 
-        _table[index] = newnode;
         _n++;
         return true;
     }
 };
-
-void testhashtable()
-{
-    vector<int> r = {4, 24, 14, 7, 37, 27, 57, 67, 34, 14, 54};
-    HashTable<int, int> ht;
-    for (auto e : r)
-    {
-        ht.Insert(make_pair(e, e));
-    }
-    if (ht.Find(37))
-    {
-        cout << "find" << endl;
-    }
-    if(ht.Erase(4))
-    {
-        cout<<"erase"<<endl;
-    }
-     if (ht.Find(4))
-    {
-        cout << "find" << endl;
-    }
-}
-
