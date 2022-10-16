@@ -135,6 +135,48 @@ private:
     vector<Node *> _table; //链表里面的元素挂起来,指针数组
     size_t _n = 0;         //有效数据，计算负载因子
 public:
+    HashTable()=default;//构造函数,编译器显示生成默认构造函数
+    HashTable(const HashTable<K,T,KeyOfT,HashFunc>& ht)//拷贝构造
+    {
+        //指针所以要完成一个深拷贝
+        _table.resize(ht._table.size());//直接搞到和他一样大
+        for(size_t i=0;i<ht._table.size();i++)
+        {
+            Node* cur=ht._table[i];
+            while(cur)
+            {
+                //没有很强的关联性
+                Node* copy=new Node(cur->_data);
+                copy->_next=_table[i];
+                _table[i]=copy;
+                //进行头插
+                cur=cur->_next;
+            }
+        }
+    }
+    HashTable<K,T,KeyOfT,HashFunc>& operator=(HashTable<K,T,KeyOfT,HashFunc> ht)
+    //深拷贝都用现代写法
+    {
+        //ht1=ht2,进行赋值，这里的ht2是一个拷贝，所以不会关联到原来的东西
+        ::swap(_n,ht._n);
+        _table.swap(ht._table);//使用现代写法，进行交换
+        return *this;
+    }
+    ~HashTable()
+    {
+        for(size_t i=0;i<_table.size();i++)
+        {
+            Node* cur=_table[i];
+            while(cur)
+            {
+                Node* next=cur->_next;
+                delete cur;
+                cur=next;
+
+            }
+            _table[i]=nullptr;//把桶释放掉
+        }
+    }
     iterator begin()
     {
         for (size_t i = 0; i < _table.size(); i++)
@@ -150,11 +192,11 @@ public:
     {
         return iterator(nullptr, this); //给控就行了
     }
-    Node *Find(const K &key)
+    iterator Find(const K &key)
     {
         if (_table.empty())
         {
-            return nullptr;
+            return iterator(nullptr,this);
         }
         KeyOfT kot;
         HashFunc hc;
@@ -162,7 +204,7 @@ public:
         if (_table[index] == nullptr)
         {
             //没找到，
-            return nullptr;
+            return iterator(nullptr,this);
         }
         else
         {
@@ -171,10 +213,10 @@ public:
             while (cur)
             {
                 if (kot(cur->_data) == key)
-                    return cur;
+                    return iterator(cur,this);
                 cur = cur->_next;
             }
-            return nullptr;
+            return iterator(nullptr,this);
         }
     }
     bool Erase(const K &key)
@@ -216,14 +258,14 @@ public:
     {
         return _table;
     }
-    bool Insert(const T &data)
+    pair<iterator,bool> Insert(const T &data)
     {
 
         KeyOfT kot;
-        Node *ret = Find(kot(data));
-        if (ret)
+        iterator ret = Find(kot(data));
+        if (ret!=end())
         {
-            return false;
+            return make_pair(ret,false);
         }
 
         HashFunc hc;
@@ -231,6 +273,8 @@ public:
         if (_n == _table.size()) //这里我们可以让负载因子变得大一点,负载因子=1的时候扩容`
         {
             size_t newcp = _table.size() == 0 ? 10 : _table.size() * 2;
+            //我们会发现，当表的容量是一个素数的时候，它就会尽可能的冲突小
+
             //这里就自己来挪动，使用和闭散列一样的方法，不好，因为会一直要new节点，
             vector<Node *> newTable;
             newTable.resize(newcp); //扩容后要进行重新映射
@@ -264,6 +308,6 @@ public:
         //用头插法把数据插进去，因为重新映射代价比较大
 
         _n++;
-        return true;
+        return make_pair(iterator(newnode,this),true);
     }
 };

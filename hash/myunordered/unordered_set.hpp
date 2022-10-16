@@ -21,7 +21,7 @@ namespace xzw
 
     public:
         typedef typename HashTable<K, K, SetKeyOfT, Hash<K>>::iterator Iterator;
-        bool insert(const K &key)
+        pair<Iterator, bool> insert(const K &key)
         {
             return _ht.Insert(key);
         }
