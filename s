@@ -7,3 +7,4 @@ g
 h
 git merge
 continue develop
+git rebase
