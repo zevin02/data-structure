@@ -5,3 +5,4 @@ e
 f
 g
 h
+git merge
