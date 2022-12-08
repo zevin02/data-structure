@@ -4,6 +4,6 @@ c
 e
 f
 g
-hhhhhhhh
+h
 git merge
 continue develop
