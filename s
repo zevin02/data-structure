@@ -8,3 +8,4 @@ h
 git merge
 continue develop
 git rebase
+continue develop
