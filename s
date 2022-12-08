@@ -6,3 +6,4 @@ f
 g
 h
 git merge
+continue develop
