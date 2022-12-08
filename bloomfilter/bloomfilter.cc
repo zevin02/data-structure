@@ -3,6 +3,7 @@ using namespace std;
 #include <bitset>
 #include <string>
 #include <vector>
+
 //字符串进行映射的话，会出现冲突，把字符串映射到某个int上，
 //判断一个字符串，在的话可能会出现冲突,可能会出现误判
 //如果不在的话，肯定是准确的

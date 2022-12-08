@@ -34,7 +34,7 @@ public:
     {
         size_t i = x / 8;
         int j = x % 8;
-        return (bool)_bits[i] & (~(1 << j)); //这样不会改变上面的bits里面的值
+        return (bool)_bits[i] & (~(1 << j)); //这样不会改变上面的bits里面的值,如果存在的话就会返回1，不存在就会返回0
     }
 };
 
@@ -55,22 +55,22 @@ class twobit
     //01代表1个
     //10代表2个
 private:
-    bit_set<N> bts1;//
-    bit_set<N> bts2;
+    bit_set<N> bts1;//左边的0
+    bit_set<N> bts2;//右边的0
 
 public:
-    void Set(size_t x)//用两个bit位来表示
+    void Set(size_t x)//用两个bit位来表示,上层添加了一个数
     {
         if(!bts1.find(x)&&!bts2.find(x))
         {
             //00
-            bts2.set(x);     
+            bts2.set(x);     //第一个0不变，第二个变为1
         }
-        else if (!bts1.find(x)&&bts2.find(x))
+        else if (!bts1.find(x)&&bts2.find(x))//已经出现了一次了
         {
             //01
-            bts2.reset(x);
-            bts1.set(x);
+            bts2.reset(x);//第二个变为0
+            bts1.set(x);//第一变为1
         }
         else
         {
@@ -85,6 +85,7 @@ public:
         {
             if(!bts1.find(i)&&bts2.find(i))
             {
+                //打印是01的数字
                 //这个就是只出现一次
                 cout<<i<<endl;
             }
@@ -104,7 +105,7 @@ public:
 
 
 
-//3. 一个文件中100亿个int，1G内存，找到出现次数不超过2次的整数
+//3. 一个文件中100亿个int，1G内存，找到出现次数不超过2次的整数,这个使用的思路和上面的只出现一次的数很类似
 
 int main()
 {
