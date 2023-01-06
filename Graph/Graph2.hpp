@@ -259,10 +259,10 @@ namespace Matrix // 邻接矩阵
             //     }
             // }
 
-            vector<bool> X(n,false);
-            vector<bool> Y(n,true);
-            X[srci]=true;
-            Y[srci]=false;
+            vector<bool> X(n, false);
+            vector<bool> Y(n, true);
+            X[srci] = true;
+            Y[srci] = false;
 
             // 从X到Y集合中，连接的边选出最小的边
             priority_queue<Edge, vector<Edge>, greater<Edge>> minq; // 选出最小边
@@ -281,17 +281,17 @@ namespace Matrix // 邻接矩阵
             {
                 Edge min = minq.top(); // 选出最小的边
                 minq.pop();
-                if(X[min._dsti])//如果选出的边都在X集合，或者都在Y集合就成环了
+                if (X[min._dsti]) // 如果选出的边都在X集合，或者都在Y集合就成环了
                 {
-                    //都为true，说明就成环了，起点一定是在X集合中的
-                    //成环了
+                    // 都为true，说明就成环了，起点一定是在X集合中的
+                    // 成环了
                     continue;
                 }
                 mintree.AddEdge(_vertex[min._srci], _vertex[min._dsti], min._w);
                 // X.insert(min._dsti); // X集合添加一个元素
                 // Y.erase(min._dsti);  // Y集合减少这个元素
-                X[min._dsti]=true;
-                Y[min._dsti]=false;
+                X[min._dsti] = true;
+                Y[min._dsti] = false;
                 size++;
                 total += min._w;
                 if (size == n - 1)
@@ -303,8 +303,8 @@ namespace Matrix // 邻接矩阵
                 {
                     if (_matrix[min._dsti][i] != MAX_W && Y[i]) // 新添加到队列里面，要保证添加的点并不已经在集合中了
                     {
-                        //目标点要在Y集合
-                        // 合法的边
+                        // 目标点要在Y集合
+                        //  合法的边
                         minq.push(Edge(min._dsti, i, _matrix[min._dsti][i]));
                     }
                 }
@@ -319,6 +319,53 @@ namespace Matrix // 邻接矩阵
                 // 可能出现走完没有选出的情况
                 return W();
         }
+        // 打印最短路径的算法
+        void Dijkstra(const V &src, vector<W> &dist, vector<int> &pPath)
+        {
+            size_t srci = GetVertexIndex(src);
+            size_t n = _vertex.size();
+            dist.resize(n, MAX_W); // 一开始这个距离就初始化给一个最大值
+            pPath.resize(n, -1);   // 父路径
+
+            // 自己到自己的距离就设置为0即可
+            dist[srci] = 0;
+            // 自己的父亲路径就是自己
+            pPath[srci] = srci;
+            vector<bool> s(n, false); // 已经确定最短路径的顶点集合
+
+            // 如果所有的点都被更新一遍了，就结束了,需要更新n次
+            for (int j = 0; j < n; j++)
+            {
+                // 去选最短路径的顶点来进行更新
+                int u = 0;
+                W min = MAX_W; // 最小的权值
+
+                for (size_t i = 0; i < n; i++)
+                {
+                    if (s[i] == false && dist[i] < min) // dist[i]已经被操作了，已经小于min了，但是他还不是已经确定的了的点
+                    {
+                        u = i;         // u保存哪一个需要接下来进行被操作
+                        min = dist[i]; // 保存此时的最小值
+                    }
+                }
+                s[u] = true;
+                // 进行松弛操作
+                // 更新u链接的顶点v，就可以更新
+                for (size_t v = 0; v < n; v++)
+                {
+                    //保证v这个点没有更新过
+                    
+                    if (s[v]==false&&_matrix[u][v] != MAX_W && dist[u] + _matrix[u][v] < dist[v]) // 记录u链接除去的所有边
+                    {
+                        // 如果此时链接出去的点小于原来记录 的值，那么我们就需要进行更新
+                        dist[v] = dist[u] + _matrix[u][v]; // 更新路径中的值
+                        pPath[v] = u;                      // 记录我们的父亲为u
+                    }
+                }
+            }
+        }
+
+
     };
 };
 
