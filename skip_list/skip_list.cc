@@ -1,19 +1,27 @@
-#include"skip_list.hpp"
+#include <iostream>
+#include "skip_list.hpp"
 
-int main()
-{
-    skipList skip_list(6);
-    srand(time(0));
+using namespace std;
+
+int main() {
+    // Create a skip list with some keys
+    skipList sl;
+    sl.insert(1);
+    sl.insert(4);
+    sl.insert(4);
+    sl.insert(5);
+    sl.insert(8);
+    sl.insert(10);
     
-    skip_list.insert(13);
-    skip_list.insert(1);
-    skip_list.insert(4);
-    skip_list.insert(16);
-    skip_list.insert(33);
-    skip_list.printSkipList();
-    cout<<skip_list.search(33)<<endl;
-    cout<<skip_list.search(313)<<endl;
-    skip_list.earse(13);
-    // skip_list.printSkipList();
+    // Perform a range search
+    vector<int> result = sl.rangeSearch(4, 8);
+    
+    // Print the result
+    cout << "Range search result: ";
+    for (int key : result) {
+        cout << key << " ";
+    }
+    cout << endl;
+    
     return 0;
 }

@@ -3,9 +3,9 @@
 using namespace std;
 #include <vector>
 #include <ctime>
-#include<cstdlib>
-#include<cmath>
-
+#include <cstdlib>
+#include <cmath>
+#include <unordered_set>
 class skipList
 {
 private:
@@ -21,7 +21,7 @@ private:
 
 private:
     size_t _level; //当前的层数这个是我们规定的最大层数
-    Node *_head;    //跳表的头节点，每一层都需要有一个这个头节点
+    Node *_head;   //跳表的头节点，每一层都需要有一个这个头节点
 
 public:
     skipList(size_t level = 4)
@@ -44,14 +44,14 @@ public:
     bool search(int key)
     {
         Node *cur = _head;
-        for (int i = _level - 1; i >= 0; i--)//从最上层，下层到最下层
+        for (int i = _level - 1; i >= 0; i--) //从最上层，下层到最下层
 
         {
             while (cur->next[i] != nullptr && cur->next[i]->key < key)
             {
                 cur = cur->next[i];
             }
-            if (cur->next[i] != nullptr && cur->next[i]->key == key)//这个地方找到了
+            if (cur->next[i] != nullptr && cur->next[i]->key == key) //这个地方找到了
             {
                 return true; //在里面找到了对应的节点就成功
             }
@@ -60,8 +60,8 @@ public:
     }
     void insert(int key) //添加一层
     {
-        size_t level = randomLevel(); //随机获得一个层数
-        Node *node = new Node(key, level);//这个就是根据获得的随机层来进行操作
+        size_t level = randomLevel();      //随机获得一个层数
+        Node *node = new Node(key, level); //这个就是根据获得的随机层来进行操作
         Node *cur = _head;
         for (int i = _level - 1; i >= 0; i--) //从最高层开始找
         {
@@ -86,7 +86,7 @@ public:
         Node *node = nullptr;
         for (int i = _level - 1; i >= 0; i--)
         {
-            while (cur->next[i] != nullptr && cur->next[i]->key < key)//在同一层往后迭代
+            while (cur->next[i] != nullptr && cur->next[i]->key < key) //在同一层往后迭代
             {
                 cur = cur->next[i];
             }
@@ -109,24 +109,50 @@ public:
             return true;
         }
     }
-    void printSkipList()//打印链表
+    vector<int> rangeSearch(int key1, int key2)
     {
-        for(int i=_level-1;i>=0;i--)
+        vector<int> result; //返回的结果
+        Node *cur = _head;
+        for (int i = _level - 1; i >= 0; i--)//这个先往后找，并下层到对应的大于key1的位置
         {
-            Node* cur=_head;
-            while(cur->next[0]!=nullptr)
+            while (cur->next[i] != nullptr && cur->next[i]->key < key1) //先一直往后找，找到比当前还要大的位置
             {
-                if(cur->next.size()>i)//如果他的next的层数比i大
+                cur = cur->next[i];
+            }
+            //直接下层到最后一层
+        }
+        //下层到了对应的位置，我们就进行在底层的一个顺序遍历即可
+        
+        if (cur->next[0] != nullptr && cur->next[0]->key >= key1) //如果当前节点比这个key还要大，我们就需要在这个节点后面进行遍历
+        {
+            Node *node = cur->next[0];                   //获得对应的node
+            while (node != nullptr && node->key <= key2) //如果这个node小于key2说明范围查找成功
+            {
+                result.push_back(node->key);
+                node = node->next[0];
+            }
+        }
+        return result;
+    }
+
+    void printSkipList() //打印链表
+    {
+        for (int i = _level - 1; i >= 0; i--)
+        {
+            Node *cur = _head;
+            while (cur->next[0] != nullptr)
+            {
+                if (cur->next.size() > i) //如果他的next的层数比i大
                 {
-                    cout<<cur->next[0]->key<<"\t";
+                    cout << cur->next[0]->key << "\t";
                 }
                 else
                 {
-                    cout<<"\t";
+                    cout << "\t";
                 }
-                cur=cur->next[0];
+                cur = cur->next[0];
             }
-            cout<<endl;
+            cout << endl;
         }
     }
 };
