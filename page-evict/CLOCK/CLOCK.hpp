@@ -126,8 +126,10 @@ public:
         while (true) {
             if (hand_->is_exist_) {
                 if (hand_->is_REF) {
+                    //该节点被访问过，设置成未被访问过
                     hand_->is_REF = false;
                 } else if (hand_->is_MODIFIED) {
+                    //设置成未被修改过
                     hand_->is_MODIFIED = false;
                 } else {
                     //既不存在也没有修改过，这个就是置换的高优先级别
