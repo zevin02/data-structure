@@ -1,14 +1,142 @@
-操作系统中数据库中，会使用驱逐算法，来实现内存和磁盘之间的交互，在内存空间满的时候，如果需要把磁盘的页面添加到内存中，就需要进行将内存的一个页面换出，保证内存空间不会溢出，我们希望在内存里面的页面能够尽可能多的被访问
+在操作系统的数据库中，使用驱逐算法来实现内存和磁盘之间的交互。当内存空间已满且需要将磁盘上的页面添加到内存中时，就需要将内存中的一个页面换出，以保证内存空间不会溢出。我们希望尽可能多地访问内存中的页面。
 
-# LRU
-将缓存中最久没有被使用的页面给换出去，即先进入缓存的数据先离开,LRU中将先进入缓存的数据看作最久未被访问的数据
+## LRU算法
+
+LRU算法（最近最少使用）是一种常用的驱逐算法，其工作原理如下：
+
+1. 每次插入数据时都将其添加到缓存的`头部`。
+2. 当缓存已满需要删除数据时，删除缓存的`尾部`数据，即**最久未被访问的数据**。
+3. 双端队列中<u>不允许存在重复的数据</u>。当插入的数据已经存在时，需要先将其删除，然后再将其添加到头部。
+
+以下是LRU算法示意图：
+
+![LRU示意图](https://i.imgur.com/7iKfmtG.png)
 
 
 
-![](https://i.imgur.com/7iKfmtG.png)
+## 实现
 
-1. 每次插入数据都是头部添加，当缓存满了删除数据的时候都是删除尾部
-2. 双端队列中不能出现重复的数据，当插入数据已经存在的时候，就需要先将其该数据删除掉
+使用一个双向链表来实现**头插尾删**，并通过**哈希表**来进行缓存的访问
+
+~~~cpp
+#include <iostream>
+using namespace std;
+#include <unordered_map>
+// LRU的节点
+struct DListNode
+{
+    int key_;
+    int value_;
+    DListNode *prev_;
+    DListNode *next_;
+    DListNode()
+        : key_(0), value_(0), prev_(nullptr), next_(nullptr) {}
+    DListNode(int key, int value)
+        : key_(key), value_(value), prev_(nullptr), next_(nullptr)
+    {
+    }
+};
+
+//我们需要一个哈希表（判断当前是否有该节点）
+//需要链表来存储数据
+// lru容量
+class LRU
+{
+public:
+    LRU(int capacity)
+        : capcity_(capacity), size_(0)
+    {
+        head_=new DListNode();
+        tail_=new DListNode();
+        
+        head_->next_=tail_;
+        tail_->prev_=head_;
+    }
+    //访问某一个元素
+    int get(int key)
+    {
+        if(cache_.find(key)==cache_.end())
+        {
+            //没找到,直接返回
+            return -1;
+        }
+        //找到了，就拿到哈希表中对应的数据，就先删除后插入，把该节点放入到头部
+        DListNode* node=cache_[key];
+        move_to_head(node);
+        return node->value_;
+    }
+
+    //插入某个元素
+    //先查看当前插入的这个节点是否存在，如果存在，就需要拿到node，并且更新value，并且放到头部
+    //如果不存在，就插入到头部，如果size等于capacity，就需要删除尾部节点，再插入新的节点
+    void put(int key,int value)
+    {
+        //先查看当前节点是否存在
+        if(cache_.find(key)!=cache_.end())
+        {
+            //当前节点存在
+            //获得该节点，并且更新他的数据，在插入到头部
+            DListNode* node=cache_[key];
+            node->value_=value;//修改他的数据
+            move_to_head(node);//移动到头部
+        }
+        else{
+            //这里就是没有找到该元素
+            DListNode* node=new DListNode(key,value);
+            cache_[key]=node;
+            add_to_head(node);//插入到头部
+            size_++;
+            //超出了容量大小，就需要执行删除操作
+            if(size_>capcity_)
+            {
+                DListNode* target=remove_tail();
+                cache_.erase(target->key_);//删除该元素在cache中
+                delete(target);
+                size_--;
+            }
+        }
+    }
+
+private:
+    unordered_map<int, DListNode *> cache_; //用来供访问的缓存
+    //我们每次就处理两个节点，一个头部插入，和尾巴删除
+    DListNode *head_;                       //存储链表的头节点，哨兵位
+    DListNode *tail_;                       //存储链表的尾节点的下一个节点,tail->prev代表的就是链表的尾节点
+    int size_;                              //当前LRU中的元素数量
+    int capcity_;                           //能够存储的最大容量
+
+    void remove_node(DListNode* node)//移除某个元素
+    {
+        //删除节点
+        node->prev_->next_=node->next_;
+        node->next_->prev_=node->prev_;
+    }
+    void add_to_head(DListNode* node)//把该数据放到头部
+    {
+
+        node->next_=head_->next_;
+        head_->next_->prev_=node;
+        head_->next_=node;
+        node->prev_=head_;
+
+    }
+    //把某一个刚访问过的节点，放到头部
+    void move_to_head(DListNode* node)
+    {
+        remove_node(node);//删除该节点
+        add_to_head(node);//添加到头部
+    }
+    //删除尾部元素
+    DListNode* remove_tail()
+    {
+        DListNode* target=tail_->prev_;//最后一个有效节点
+        remove_node(target);//移除该节点
+        return target;
+    }
+};
+~~~
+
+
 
 # 时钟置换算法(CLOCK Algorithm)
 时钟置换算法使用一个指针周期性地指向缓冲区中的下一个页面。
@@ -37,13 +165,17 @@
 
 优点:
 
->算法简单,需要很少的状态信息
-通过周期性地访问每个页面,实现了类似时间分片的公平性
+>* 算法简单,需要很少的状态信息
+>* 通过周期性地访问每个页面,实现了类似时间分片的公平性
 
 缺点:
 
->无法考虑页面使用频率的不同
-整体上,时钟算法充分利用了页面使用序列中的局部性,但不能很好地处理全局性。
+>* 无法考虑页面使用频率的不同
+>* 整体上,时钟算法充分利用了页面使用序列中的局部性,但不能很好地处理全局性。
+>
+>> 时钟算法在处理页面替换的时候，更加注重最近被访问的页面，即局部性，他通过周期性的访问每个页面，使最近被访问的页面流在缓冲区中，这种局部性处理方式对于局部性较强的场景非常有效
+>
+>> 时钟算法只是检查页面最近是否被访问来进行替换，无法考虑页面的使用频率和其他全局性特征，
 
 这样删除了REF和m标记,直接描述主要流程。页指针hand泛指缓冲区中的下一个页面,默认未使用。
 
@@ -57,6 +189,8 @@
 4. 最近即访问又修改了
 
 按照类似简单Clock算法（使用两个标号）来依次判断有没有情况1的页面，如果有就换出，如果没有就判断有没有情况2的页面，注意，当判断完后还是没有并不是去判断情况3和4，而是把所有访问标号都重置为0，再依次判断1和2，这样就能找到最适合换出的页面。
+
+## 实现
 
 
 
@@ -102,7 +236,7 @@ public:
             }
             //节点往后移动
             advance(hand_, 1);
-            if (hand_ == pages_.end())//走到尾巴，
+            if (hand_ == pages_.end())//走到尾巴，重新走到头部
                 hand_ = pages_.begin();
         }
     }
@@ -131,8 +265,6 @@ public:
 （Least Frequently Used）:最近最少使用算法
 一个数据在一段事件很少被访问到，那么可以认为他将来被访问的可能性很小，因此当空间满了，最小频率访问的数据应该最先被淘汰
 
-![](https://mjj.today/i/I6gLXN) 
-
 如图，当插入/访问D时候，会将D的频次进行更新，并且对链表的顺序进行重新排序，当插入为F的时候，此时容器已经满了，就需要将链表的尾节点进行删除（尾节点是访问频次最少的节点），并且将该新节点插入到尾节点上,这就完成了内存淘汰
 
 
@@ -146,9 +278,86 @@ LFU将数据和数据的访问频次保存在一个容量有限的容器中，�
 
 
 
-![](https://mjj.today/i/I6gLXNhttps://mjj.today/i/I60loX)
+![](https://pic3.zhimg.com/80/v2-101608d8bb186f8a9318608c33d61d4e_720w.webp)
 
-我们可以使用哈希表来模拟链表，哈希表的key就是访问的频率，哈希表的value就是出现这些频次的值
+使用一个双哈希表，一个用来记录freq的哈希表，key就是出现的频率，value就是出现这一频率元素的链表
+
+使用一个哈希表来用作缓存来进行访问
+
+## 实现
+
+~~~cpp
+#include <iostream>
+#include <unordered_map>
+#include <list>
+
+using namespace std;
+
+class LFUCache
+{
+private:
+    int capacity_;
+    int minFrequency_;
+    unordered_map<int, pair<int, int>> cache_; // key->{value,frequency},查询的时候直接查询这个cache
+    unordered_map<int, list<int>::iterator> keyIter_;//每个key对应的元素在frequency中的list某个位置的迭代器
+    unordered_map<int, list<int>> frequency_; //哈希表->key是出现的频次，value就是一个链表里面出现这个频次的元素
+public:
+    LFUCache(int capacity)
+        : capacity_(capacity), minFrequency_(0)
+    {
+    }
+    //访问某个key
+    int get(int key)
+    {
+        //
+        if (cache_.find(key) == cache_.end())
+        {
+            return -1; //没有找到就返回-1
+        }
+        //找到了
+        int value = cache_[key].first;
+        int& freq = cache_[key].second;
+        frequency_[freq].erase(keyIter_[key]); //从原来的链表上删除这个元素
+        //更新频率
+        freq++;
+        frequency_[freq].push_back(key); //插入到对应频次的链表上
+        keyIter_[key] = --frequency_[freq].end();//更新迭代器对应的list迭代器节点
+        if (frequency_[minFrequency_].empty())
+        {
+            minFrequency_++;
+        }
+        return value; //获得这个元素对应的value
+    }
+    void put(int key,int value)
+    {
+        //插入一个元素
+        if (capacity_ <= 0)
+            return;
+        int existingValue = get(key);//根据这个key获得它对应的value
+        if (existingValue != -1)
+        {
+            //这个元素存在，只需要更新他的值就行了
+            cache_[key].first =value;
+            return;
+        }
+        //当前的值不存在
+        if (cache_.size() >= capacity_)
+        {
+            int evictkey = frequency_[minFrequency_].front(); //获得最小的元素
+            cache_.erase(evictkey);
+            keyIter_.erase(evictkey);
+            frequency_[minFrequency_].pop_front(); //删除第一个元素
+        }
+        //添加进新的元素
+        cache_[key] = {value, 1};
+        frequency_[1].push_back(key);//往出现1次的频率链表中添加元素
+        keyIter_[key] = --frequency_[1].end();
+        minFrequency_ = 1;//因为是新插入进来的元素，所以就需要将最小频率修改为1
+    }
+};
+~~~
+
+
 
 ## 特点
 
