@@ -180,3 +180,18 @@ func TestNewBPTreeDelete3(t *testing.T) {
 	}
 
 }
+
+func TestNewBPTreeGet(t *testing.T) {
+	tree := NewBPTree(4)
+	for i := int64(1); i <= 15; i++ {
+		tree.Set(i, i)
+	}
+	for i := int64(1); i <= 10; i++ {
+		assert.Equal(t, i, tree.Get(i))
+	}
+	assert.Nil(t, tree.Get(0))
+	assert.Nil(t, tree.Get(16))
+	tree.Remove(14)
+	assert.Nil(t, tree.Get(14))
+	tree.Set(14, 14)
+}
